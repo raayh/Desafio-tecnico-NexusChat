@@ -1,63 +1,89 @@
-  <script>
-    import { useAuthStore } from '../stores/store';
-  
-    export default {
-      data (){
-        return {
-          nickname: '',
-          senha: '',
-          erro: null
-        };
-      },
-      methods: {
-        login() {
-          const authStore = useAuthStore();
-
-          const loginSucesso = authStore.login(this.nickname, this.senha);
-  
-          if(loginSucesso){
-            this.$router.push('/chat');
-          } else {
-            this.erro = 'Nickname ou senha invalidos';
-          }
-  
-        },
-      },
-    };
-  </script>
-
 <template>
   <div class="body">
 
-      <div class="cabecalho">
+      <div class="topbar">
         <img src="@/assets/images/logo.png" alt="" class="img-logo">
         <h1 class="text-logo">Nexus</h1>
       </div>
 
       <div class="box-login">
         
-        <p class="titulo-login">Faça login ou cadastre-se</p>
+        <p class="title-login">Faça login ou cadastre-se</p>
         
         <input type="text" v-model="nickname" placeholder="Insira seu nickname">
-        <input type="text" v-model="senha" placeholder="Insira sua senha">
+        <input type="password" v-model="password" placeholder="Insira sua senha">
 
         <div class="btn">
-          <button class="criar">Criar</button>
-          <button @click="login" class="Entrar">Entrar</button>
+          <button @click="addUser()" class="create">Criar</button>
+          <button @click="login()" class="login">Login</button>
         </div>
 
-        <p v-if="erro" style="color: red; margin-top: 10px;">{{ erro }}</p>
+        <!-- <p v-if="erro" style="color: red; margin-top: 10px;">{{ erro }}</p> -->
 
       </div>
     </div>
 </template>
 
+  <script>
+    import { useAuthStore } from '../stores/auth';
+    import { useToast } from "vue-toastification";
+  
+    export default {
+      data (){
+        return {
+          nickname: '',
+          password: ''
+        };
+      },
+      computed: {
+        authStore() {
+          return useAuthStore();
+        },
+        toast(){
+          return useToast();
+        },
+        result(){
+          return useAuthStore.login(this.nickname, this.password);
+        }
+    },
+
+      methods: {
+        
+        login() {
+          // const toast = useToast();
+          // const authStore = useAuthStore();
+          // const result = authStore.login(this.nickname, this.password);
+          if(result.status === "success"){
+            // this.erro = null;
+            toast.success(`Bem-vindo(a), ${result.user.nickname} !`);
+            this.$router.push('/chat');
+          } else if (result.status === "wrong-password"){
+            toast.error("Senha incorreta. Tente novamente.");
+          } else if (result.status === "not-found"){
+            toast.warning("Usuário não encontrado. Clique em create para se cadastrar.");
+          }
+        },
+        addUser(){
+          // const toast = useToast();
+          // const authStore = useAuthStore();
+          // const result = authStore.login(this.nickname, this.password);
+          if(result.status === "created"){
+            // this.erro = null;
+            toast.success(`Bem-vindo, ${result.user.nickname} !`);
+            this.$router.push('/chat');
+          } else if (result.status === "already-exists"){
+            toast.warning("Esse nickname já está em uso, escolha outro para continuar.");
+          }
+        }
+      },
+    };
+  </script>
 
 <style scoped>
 .body {
   display: flex;
   flex-direction: column;     /* empilha os elementos: cabeçalho em cima, box embaixo */
-  justify-content: justify; /*distribui espaço entre topo e meio */
+  justify-content: center; /*distribui espaço entre topo e meio */
   align-items: center;        /* centraliza horizontal */
   
   padding: 25px;
@@ -73,10 +99,13 @@
   background-repeat: no-repeat;                    /* não repete */
 }
 
-.cabecalho {
+.topbar {
   display: flex;
   flex-direction: row;
   text-align: center;
+
+  position: fixed;
+  top: 25px;
 }
 
 .img-logo{
@@ -105,7 +134,7 @@
   background-color: rgba(200, 190, 234, 76%);
 }
 
-.titulo-login{
+.title-login{
   color:black;
   font-size: 24px;
   font-weight: bold;
@@ -147,7 +176,5 @@ button{
 
   padding: 8px 40px;
 }
-
-
 
 </style>
