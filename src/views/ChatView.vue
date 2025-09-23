@@ -7,18 +7,12 @@
 
             <div class="avatar">
                <img src="https://i.pravatar.cc/150?img=30" alt="" class="avatar-image">
-               <p class="avatar-name">Raayh</p>
+               <p class="avatar-name">{{chatStore.loggedInUser?.nickname}}</p>
             </div>
             <img src="../assets/icons/more.png" alt="" class="more-image">
          </div>
 
-         <div class="lists">
-           <SidebarLists 
-            v-for="(list, index) in chatStore.lists"
-            :key="index"
-            :list="list"
-           />
-         </div>
+         <SidebarLists />
 
          <div class="logo">
             <img src="@/assets/images/logo.png" alt="" class="logo-image">
@@ -27,52 +21,56 @@
       </div>
 
       <div class="chat">
-
-         <div class="top-bar">
-
-            <div class="chat-info">
-               <h3 class="room-name"> {{ chatStore.activeRoom || "Selecione uma sala" }} </h3>
-               <p class="online-status">10 pessoas online</p>
-            </div>
-
-            <div class="topBar-actions">
-               <img src="../assets/icons/notification.png" alt="" class="notifications">
-               <img src="../assets/icons/Users.png" alt="" class="participants">
-               <div class="search">
-                  <input type="text" class="search-text" placeholder="Buscar">
-                  <img src="../assets/icons/search.png" alt="" class="search-icon">
+         
+            <div class="top-bar">
+   
+               <div class="chat-info">
+                  <h3 class="room-name"> {{ chatStore.activeRoom || "Selecione uma sala" }} </h3>
+                  <p class="online-status">10 pessoas online</p>
                </div>
-
+   
+               <div class="topBar-actions">
+                  <img src="../assets/icons/notification.png" alt="" class="notifications">
+                  <img src="../assets/icons/Users.png" alt="" class="participants">
+                  <div class="search">
+                     <input type="text" v-model="searchText" @keyup.enter="showSearchModal=true, searchMessage()" class="search-text" placeholder="Buscar">
+                     <img src="../assets/icons/search.png" alt="" class="search-icon">
+                  </div>
+   
+               </div>
+   
             </div>
-
-         </div>
-
-         <div class="messages-block">
+         <div class="chat-body">
             
-            <ChatMessage 
-            v-for="message in chatStore.messages"
-            :key="message.id"
-            :message="message"
-            :id="message.id"
-            :class="{
-               'my-messages': message.nickname === chatStore.userNickname,
-               'others-messages': message.nickname !== chatStore.userNickname
-            }"/>
-
-         </div>
-
-         <div class="message-bar">
-            <input type="text" class="new-message" placeholder="Digite sua mensagem aqui...">
-            <div class="new-message-icons">
-               <img src="" alt="" class="attchment">
-               <img src="" alt="" class="emoji">
-               <img src="" alt="" class="text-editor">
-               <img src="../assets/icons/send_message.png" alt="" class="send">
+            <div class="chat-content">
+               <div class="messages-block" ref="messagesblock">
+                  <ChatMessage />
+               </div>
+           
+               <div class="message-bar">
+                  <input 
+                     type="text" 
+                     class="new-message" 
+                     v-model="newMessageText" 
+                     @keyup.enter="sendMessage()"
+                     placeholder="Digite sua mensagem aqui...">
+                  <div class="new-message-icons">
+                     <!-- <img src="" alt="" class="attchment">
+                     <img src="" alt="" class="emoji">
+                     <img src="" alt="" class="text-editor"> -->
+   
+                     <img src="../assets/icons/send_message.png" class="send" @click="sendMessage()">
+                  </div>
+               </div>
             </div>
+
+            <Search v-if="showSearchModal" @keyup.esc="showSearchModal=false"/> 
          </div>
 
       </div>
 
+
+     
    </div>
 </template>
 
@@ -80,19 +78,78 @@
 import { useChatStore } from '../stores/chat';
 import SidebarLists from '@/components/SidebarLists.vue';
 import ChatMessage from '@/components/ChatMessage.vue';
+import Search from '@/components/Search.vue';
 
 export default{
    components:{
       SidebarLists,
-      ChatMessage
+      ChatMessage,
+      Search
+   },
+   data() {
+      return {
+        newMessageText: '',
+        searchText: '',
+        showSearchModal: false
+      };
    },
    computed: {
       chatStore() {
          return useChatStore();
-      }
+      },
+      currentMessages() {
+         return this.chatStore.messagesByRoom[this.chatStore.activeRoom] || []
+      },
    },
-}
+   methods: {
+      sendMessage(){
+         if(!this.newMessageText == ''){
+            
+            const newMessage = {
+               // id: Date.now(),
+               nickname: this.chatStore.loggedInUser.nickname,
+               text: this.newMessageText,
+               date: new Date().toISOString(),
+            };
 
+            this.chatStore.addNewMessage(newMessage);
+            this.newMessageText = '';
+
+            this.scrollToBottom();
+
+         } else {
+            alert("Digite alguma coisa para enviar")}
+         
+      },
+      scrollToBottom() {
+         // O $nextTick garante que a rolagem aconteça APÓS a nova mensagem ser renderizada
+         this.$nextTick(() => {
+            const container = this.$refs.messagesblock;
+            if (container) {
+               container.scrollTop = container.scrollHeight;
+            }
+         });
+      },
+      searchMessage(){
+         const result = this.currentMessages.filter((message) => {
+            return (message.text.toLowerCase().indexOf(this.searchText.toLowerCase()) > -1)
+         }); 
+         console.log(result)
+      }  
+   },
+   watch: {
+    // O watcher observa a propriedade computada `currentMessages`
+    currentMessages() {
+      this.scrollToBottom();
+    }
+   },
+   mounted() {
+      if (!this.chatStore.loggedInUser) {
+        this.$router.push('/');
+      }  
+      this.scrollToBottom();
+   }
+}
 </script>
 
 <style scoped>
@@ -154,15 +211,6 @@ export default{
    color: #C8BEEA;
 }
 
-/* Listas de favoritos, salas e directs */
-
-.lists{
-   display: flex;
-   flex-direction: column;
-   padding: 40px 25px;
-   flex-grow: 1;
-}
-
 /* Rodapé sidebar */
 
 .logo{
@@ -176,8 +224,10 @@ export default{
 /* Lado da conversa */
 
 .chat{
+   position: relative;
    display: flex;
    flex-direction: column;
+   font-size: 14px;
 
    width: 75%;
    height: 100vh;            
@@ -186,14 +236,28 @@ export default{
    color: white;
 }
 
-/* Cabeçalho da conversa */
+/* Div que contem o conteudo(mensagens e input) e o modal */
+.chat-body{ 
+   display: flex;
+   flex: 1; /* ocupa o espaço abaixo da top-bar */
+   overflow: hidden;
+}
 
+/* Menagens e input */
+.chat-content{
+   display: flex;
+   flex-direction: column;
+   flex: 1;
+}
+
+/* Cabeçalho da conversa */
 .top-bar{
    display: flex;
    flex-direction: row;
    flex: 0 0 auto;
-   justify-content: space-between;
 
+   justify-content: space-between;
+   
    padding: 15px 40px;
 
    border-bottom: 1px solid #B4A7DF;
@@ -258,11 +322,29 @@ export default{
    display: flex;
    flex-direction: column;
    flex: 1;
+
    overflow-y: auto;
 
    gap: 20px;
    padding: 30px 40px;
 }
+
+/* Estilizações do scroll */
+.messages-block::-webkit-scrollbar {
+  width: 10px; /* Largura do scrollbar */
+}
+
+.messages-block::-webkit-scrollbar-thumb{
+  background-color: transparent /* Largura do scrollbar */
+}
+
+.messages-block:hover::-webkit-scrollbar-thumb{
+  background: #583BBF; /* Largura do scrollbar */
+  border-radius: 10px;
+  border: 2px solid #C8BEEA;
+  
+}
+
 
 
 /* Input de mensagem */

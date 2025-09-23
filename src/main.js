@@ -18,9 +18,6 @@ app.use(router)
 
 app.mount('#app')
 
-const authStore = useAuthStore();
-authStore.init();
-
 const chatStore = useChatStore();
 chatStore.init();
 

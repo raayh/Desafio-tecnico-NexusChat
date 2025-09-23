@@ -1,61 +1,66 @@
 <template>
-
-    <div>
-        <div class="status-message">
-            <p class="user-name-message" v-if="message.nickname !== chatStore.userNickname">{{message.nickname}}</p>
-            <p class="user-name-message" v-else>Você</p>
-            <p class="wd-message">{{ formatWeekday(message.date)}}</p>
-            <p class="hour-message">{{ formatTime(message.date) }}</p>
-        </div>
-        <div  class="message">
-            <img 
-            v-if="message.nickname !== chatStore.userNickname"
-            :src="'https://i.pravatar.cc/150?img=1' + (id + 1)" 
-            class="message-avatar-image">
-
-            <div class="messages">
-                <p :class="{ 
-                'my-text': message.nickname === chatStore.userNickname, 
-                'text-message': message.nickname !== chatStore.userNickname }">
-                    {{message.text}}
-                </p>
+         <div v-for="message in currentMessages" :key="message.id" :class="messageClasses(message)">
+             <div class="status-message">
+                 <p class="user-name-message" v-if="!isMyMessage(message)">{{message.nickname}}</p>
+                 <p class="user-name-message" v-else>Você</p>
+                 <p class="wd-message">{{ formatWeekday(message.date)}}</p>
+                 <p class="hour-message">{{ formatTime(message.date) }}</p>
+                </div>
+                <div  class="message">
+                    <img 
+                    v-if="!isMyMessage(message)"
+                    :src="'https://i.pravatar.cc/150?img=' + message.id" 
+                    class="message-avatar-image">
+                    
+                    <div class="messages">
+                        <p :class="textMessageClasses(message)">{{message.text}}</p>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    
 </template>
 
 <script>
 import { useChatStore } from '../stores/chat';
 
 export default{
-    props:{
-        message:{
-            type: Object,
-            required: true
-        },
-        id: {
-            type: Number,
-            required: true
-        }
-    },
     computed: {
       chatStore() {
          return useChatStore();
-      }
-   },
-   methods:{
-      formatWeekday(dateString) {
+      },
+      currentMessages() {
+         return this.chatStore.messagesByRoom[this.chatStore.activeRoom] || []
+      },
+    
+    },
+    methods: { 
+        isMyMessage(message) {
+          // Lógica para saber se a mensagem é do usuário logado
+          return message.nickname === this.chatStore.loggedInUser?.nickname;
+        },
+        messageClasses(message) {
+          // Classe para o alinhamento da mensagem
+          return {
+              'my-messages': this.isMyMessage(message),
+              'others-messages': !this.isMyMessage(message)
+          };
+        },
+        textMessageClasses(message) {
+          // Classe para a cor da bolha do chat
+          return {
+              'my-text': this.isMyMessage(message),
+              'text-message': !this.isMyMessage(message)
+          };
+        },
+        formatWeekday(dateString) {
          const date = new Date(dateString);
          const options = { weekday: 'long' };
          return new Intl.DateTimeFormat('pt-BR', options).format(date);
-      },
-
-      formatTime(dateString) {
+        },
+        formatTime(dateString) {
          const date = new Date(dateString);
          const options = { hour: '2-digit', minute: '2-digit', hour12: false };
          return new Intl.DateTimeFormat('pt-BR', options).format(date);
-      }
+        }
    }
 }
 </script>

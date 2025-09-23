@@ -18,14 +18,12 @@
           <button @click="login()" class="login">Login</button>
         </div>
 
-        <!-- <p v-if="erro" style="color: red; margin-top: 10px;">{{ erro }}</p> -->
-
       </div>
     </div>
 </template>
 
   <script>
-    import { useAuthStore } from '../stores/auth';
+    import { useChatStore } from '../stores/chat';
     import { useToast } from "vue-toastification";
   
     export default {
@@ -35,40 +33,41 @@
           password: ''
         };
       },
+
       computed: {
-        authStore() {
-          return useAuthStore();
+        chatStore() {
+          return useChatStore();
         },
-        toast(){
-          return useToast();
-        },
-        result(){
-          return useAuthStore.login(this.nickname, this.password);
-        }
+      },
+
+      mounted() {
+      // Carrega o estado inicial da store
+      this.chatStore.init();
+      // Se houver um usuário logado, redireciona para o chat
+      if (this.chatStore.loggedInUser) {
+        this.$router.push('/chat');
+      }
     },
 
       methods: {
         
         login() {
-          // const toast = useToast();
-          // const authStore = useAuthStore();
-          // const result = authStore.login(this.nickname, this.password);
+          const toast = useToast();
+          const result = this.chatStore.login(this.nickname, this.password);
+
           if(result.status === "success"){
-            // this.erro = null;
             toast.success(`Bem-vindo(a), ${result.user.nickname} !`);
             this.$router.push('/chat');
           } else if (result.status === "wrong-password"){
             toast.error("Senha incorreta. Tente novamente.");
           } else if (result.status === "not-found"){
-            toast.warning("Usuário não encontrado. Clique em create para se cadastrar.");
+            toast.warning("Usuário não encontrado. Clique em 'Criar' para se cadastrar.");
           }
         },
         addUser(){
-          // const toast = useToast();
-          // const authStore = useAuthStore();
-          // const result = authStore.login(this.nickname, this.password);
+          const toast = useToast();
+          const result = this.chatStore.addUser(this.nickname, this.password);
           if(result.status === "created"){
-            // this.erro = null;
             toast.success(`Bem-vindo, ${result.user.nickname} !`);
             this.$router.push('/chat');
           } else if (result.status === "already-exists"){

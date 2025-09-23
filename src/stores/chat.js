@@ -1,68 +1,83 @@
 import { defineStore } from 'pinia'
+import axios from 'axios';
 
 export const useChatStore = defineStore("chat", {
-    // state: () => ({
-    //     favorites: [ "Fulano(eu)", "BFFs"],
-    //     rooms: [ "Geral", "Músicas", "BFFs"],
-    //     directs: [ "Mat", "Ana Carolina"],
-    //     activeRoom: null,
-    // }),
-    state: () => ({
-       lists: [
+   state: () => ({
+      users: [
+         { nickname: 'rafinha_bastos', password: '123' },
+         { nickname: 'carlos_almeida', password: '123' },
+         { nickname: 'ana', password: '123' },
+         { nickname: 'raayh', password: '123'}
+      ],
+      loggedInUser: null,
+      lists: [
           { title: 'Favoritos', items: [ "Fulano(eu)", "BFFs"], isOpen: false},
           { title: 'Salas', items: [ "Geral", "Músicas", "BFFs"], isOpen: false},
-          { title: 'Mensagens Diretas', items: [ "Mat", "Ana Carolina"], isOpen: false},
-       ],
-       activeRoom: null,
-       userNickname: 'Raayh', // <--- Nickname para diferenciar suas mensagens
-       
-       messages: [ // <--- Array de mensagens para a tela
-          { 
-             id: 1, 
-             nickname: 'Rafinha Bastos', 
-             text: 'Olá a todos! Como vocês estão?', 
-             date: '2025-09-19T09:10:00Z' 
-          },
-          { 
-             id: 2, 
-             nickname: 'Carlos Almeida', 
-             text: 'Opa, tudo bem por aqui! E com você?', 
-             date: '2025-09-19T09:12:00Z' 
-          },
-          { id: 3, 
-             nickname: 'Raayh', 
-             text: 'Também estou bem, obrigado por perguntar!', 
-             date: '2025-09-19T09:14:00Z' 
-          },
-          { 
-             id: 4, 
-             nickname: 'Ana Carolina', 
-             text: 'Cheguei! Tive que resolver um problema com a internet.', 
-             date: '2025-09-19T09:16:00Z' 
-          },
-          { 
-             id: 5, 
-             nickname: 'Mat', 
-             text: 'Sem problemas, Ana. Estamos apenas começando.', 
-             date: '2025-09-19T09:17:00Z' 
-          },
-          { 
-             id: 6, 
-             nickname: 'Raayh', 
-             text: 'O bom é que agora você está aqui!', 
-             date: '2025-09-19T09:18:00Z' 
-          }
-       ]
+          { title: 'Mensagens Diretas', items: [ "Mat", "Ana"], isOpen: false},
+      ],
+      activeRoom: 'Geral',       
+      messagesByRoom: {},
+      newMessage: []
     }),
 
     actions: {
-        init() {
-            localStorage.setItem("lists", JSON.stringify(this.lists));
-            localStorage.setItem("messages", JSON.stringify(this.messages));
-            localStorage.setItem("room", JSON.stringify(this.activeRoom));  
-        },
-        setActiveRoom(room){
-            this.activeRoom = room;
-        }
+     // Inicializa a store carregando do localStorage
+      async init() {
+         this.users = JSON.parse(localStorage.getItem("users")) || this.users;
+         this.loggedInUser = JSON.parse(localStorage.getItem("loggedInUser")) || null;
+         this.activeRoom = JSON.parse(localStorage.getItem("activeRoom")) || "Geral";
+         this.messagesByRoom = JSON.parse(localStorage.getItem("messagesByRoom")) || {};
+
+         // Se não tiver nada no localStorage ainda, carrega do arquivo JSON
+         if (Object.keys(this.messagesByRoom).length === 0) {
+            try {
+               const response = await axios.get('/messages.json');
+               this.messagesByRoom = response.data;
+               localStorage.setItem("messagesByRoom", JSON.stringify(this.messagesByRoom));
+            } catch (error) {
+               console.error("Erro ao carregar mensagens:", error);
+            }
+         }
+      },
+
+     // ---------- AUTH ----------
+      login(nickname, password) {
+         const user = this.users.find(user => user.nickname === nickname);
+         
+         if(!user) return { status: "not-found" }; 
+         if (user.password !== password) return { status: "wrong-password" };
+
+         this.loggedInUser = user;
+         localStorage.setItem("loggedInUser", JSON.stringify(this.loggedInUser));
+         return { status: "success", user };
+      },
+
+      addUser(nickname, password) {
+         const exists = this.users.find(user => user.nickname === nickname);
+         if(exists) return { status: "already-exists" };
+
+         const newUser = { nickname, password };
+         this.users.push(newUser);
+         this.loggedInUser = newUser;
+            
+         localStorage.setItem("users", JSON.stringify(this.users));
+         localStorage.setItem("loggedInUser", JSON.stringify(this.loggedInUser));
+
+         return { status: "created", user: newUser };
+      },
+      // ---------- ROOMS ----------
+      setActiveRoom(room){
+         this.activeRoom = room;
+         localStorage.setItem("activeRoom", JSON.stringify(this.activeRoom));
+      },
+
+      // ---------- MESSAGES ----------
+      addNewMessage(newMessage){
+         if (!this.messagesByRoom[this.activeRoom]) {
+            this.messagesByRoom[this.activeRoom] = [];
+         }
+         this.messagesByRoom[this.activeRoom].push(newMessage);
+         localStorage.setItem("messagesByRoom", JSON.stringify(this.messagesByRoom));
+      }
     }
 })
