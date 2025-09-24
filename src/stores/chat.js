@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
 import axios from 'axios';
 
+function normalizeNickname(nickname) {
+  return nickname.trim().toLowerCase();
+}
+
 export const useChatStore = defineStore("chat", {
    state: () => ({
       users: [
@@ -42,7 +46,8 @@ export const useChatStore = defineStore("chat", {
 
      // ---------- AUTH ----------
       login(nickname, password) {
-         const user = this.users.find(user => user.nickname === nickname);
+         const normalizedNickname = normalizeNickname(nickname);
+         const user = this.users.find(user => user.nickname === normalizedNickname);
          
          if(!user) return { status: "not-found" }; 
          if (user.password !== password) return { status: "wrong-password" };
@@ -53,10 +58,11 @@ export const useChatStore = defineStore("chat", {
       },
 
       addUser(nickname, password) {
-         const exists = this.users.find(user => user.nickname === nickname);
+         const normalizedNickname = normalizeNickname(nickname);
+         const exists = this.users.find(user => user.nickname === normalizedNickname);
          if(exists) return { status: "already-exists" };
 
-         const newUser = { nickname, password };
+         const newUser = { nickname: normalizedNickname, password };
          this.users.push(newUser);
          this.loggedInUser = newUser;
             

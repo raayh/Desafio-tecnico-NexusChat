@@ -30,7 +30,6 @@ export default{
       currentMessages() {
          return this.chatStore.messagesByRoom[this.chatStore.activeRoom] || []
       },
-    
     },
     methods: { 
         isMyMessage(message) {
@@ -60,7 +59,7 @@ export default{
          const date = new Date(dateString);
          const options = { hour: '2-digit', minute: '2-digit', hour12: false };
          return new Intl.DateTimeFormat('pt-BR', options).format(date);
-        }
+        },
    }
 }
 </script>

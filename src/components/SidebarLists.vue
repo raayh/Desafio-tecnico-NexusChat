@@ -8,10 +8,10 @@
     
             <ul v-if="list.isOpen" class="list-content">
                 <li v-for="item in list.items" 
-                :key="item" 
-                class="menu-item"
-                @click="goToChat(item)" 
-                :class="{active: chatStore.activeRoom === item}">
+                    :key="item" 
+                    class="menu-item"
+                    @click="goToChat(item)" 
+                    :class="{active: chatStore.activeRoom === item}">
                 
                     <p>{{item}}</p>
             

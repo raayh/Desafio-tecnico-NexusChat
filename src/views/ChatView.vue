@@ -33,7 +33,7 @@
                   <img src="../assets/icons/notification.png" alt="" class="notifications">
                   <img src="../assets/icons/Users.png" alt="" class="participants">
                   <div class="search">
-                     <input type="text" v-model="searchText" @keyup.enter="showSearchModal=true, searchMessage()" class="search-text" placeholder="Buscar">
+                     <input type="text" v-model="searchText" @keyup.enter="showSearchModal=true, searchMessage" class="search-text" placeholder="Buscar">
                      <img src="../assets/icons/search.png" alt="" class="search-icon">
                   </div>
    
@@ -64,13 +64,10 @@
                </div>
             </div>
 
-            <Search v-if="showSearchModal" @keyup.esc="showSearchModal=false"/> 
+            <Search v-if="showSearchModal" @keyup.esc="showSearchModal=false" :searchMessage="searchMessage" /> 
          </div>
 
       </div>
-
-
-     
    </div>
 </template>
 
@@ -100,14 +97,20 @@ export default{
       currentMessages() {
          return this.chatStore.messagesByRoom[this.chatStore.activeRoom] || []
       },
+      searchMessage(){
+         let itemsFiltered = [];
+         itemsFiltered = this.currentMessages.filter((message) => {
+            return (message.text.toLowerCase().indexOf(this.searchText.toLowerCase()) > -1)
+         }); 
+         return itemsFiltered;
+      }, 
    },
    methods: {
       sendMessage(){
          if(!this.newMessageText == ''){
-            
             const newMessage = {
                // id: Date.now(),
-               nickname: this.chatStore.loggedInUser.nickname,
+               nickname: this.chatStore.loggedInUser.nickname.trim().toLowerCase(),
                text: this.newMessageText,
                date: new Date().toISOString(),
             };
@@ -129,13 +132,7 @@ export default{
                container.scrollTop = container.scrollHeight;
             }
          });
-      },
-      searchMessage(){
-         const result = this.currentMessages.filter((message) => {
-            return (message.text.toLowerCase().indexOf(this.searchText.toLowerCase()) > -1)
-         }); 
-         console.log(result)
-      }  
+      }
    },
    watch: {
     // O watcher observa a propriedade computada `currentMessages`
