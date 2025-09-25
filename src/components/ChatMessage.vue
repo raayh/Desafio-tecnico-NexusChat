@@ -9,20 +9,27 @@
                 <div  class="message">
                     <img 
                     v-if="!isMyMessage(message)"
-                    :src="'https://i.pravatar.cc/150?img=' + message.id" 
+                    :src="chatStore.avatarUrl(message.nickname)" 
                     class="message-avatar-image">
                     
                     <div class="messages">
                         <p :class="textMessageClasses(message)">{{message.text}}</p>
                     </div>
                 </div>
-            </div>
+         </div>
 </template>
 
 <script>
+import { useRoute } from 'vue-router';
 import { useChatStore } from '../stores/chat';
 
 export default{
+   props:{
+      isSearchResult: {
+         type: Boolean,
+         default: false
+      }
+   },
     computed: {
       chatStore() {
          return useChatStore();

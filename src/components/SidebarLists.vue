@@ -1,7 +1,7 @@
 <template>
     <div class="lists">
-        <div v-for="(list, index) in chatStore.lists" :key="index">
-            <div @click="toggleList(list)" class="list-header">
+        <div v-for="(list, index) in userLists" :key="index">
+            <div @click="chatStore.toggleList(list.title)" class="list-header">
                 <img src="../assets/icons/more2.png" :class="{ 'collapsed-icon': list.isOpen }">
                 <p class="title-list">{{list.title}}</p>
             </div>
@@ -11,10 +11,19 @@
                     :key="item" 
                     class="menu-item"
                     @click="goToChat(item)" 
-                    :class="{active: chatStore.activeRoom === item}">
-                
-                    <p>{{item}}</p>
+                    :class="{active: chatStore.activeRoom === item.name}">
+                    
+                    <p>{{item.name}}</p>
             
+                </li>
+            </ul>
+
+            <ul v-else class="list-content">
+                <li 
+                    v-if="isActiveItem(list)"
+                    class="menu-item active"
+                    @click="goToChat(activeItem(list))">
+                    <p>{{ activeItem(list).name }}</p>
                 </li>
             </ul>
         </div>
@@ -25,31 +34,44 @@
 import { useChatStore } from '@/stores/chat';
 
 export default {
-    props:{
-        lists:{
-            type: Object,
-        }
-    },
     computed: {
-         chatStore() {
-            return useChatStore();
+        chatStore() {
+          return useChatStore();
+        },
+        userLists() {
+            const userId = this.chatStore.loggedInUser?.nickname;
+            
+            const filteredLists = 
+                this.chatStore.lists.map(list => ({
+                    ...list,
+                    items: 
+                    list.items.filter(item => item.participants.includes(userId)
+                )
+                }));
+            
+            // Adicione o console.log aqui
+            // console.log('Lista filtrada para o usuário:', filteredLists);
+
+            return filteredLists;
         }
     },
     
     methods: {
-        // isOpen(){
-        //     this.chatStore.lists.map(() => true);
-        // },
-        toggleList(list) {
-            list.isOpen = !list.isOpen;
-        },
         goToChat(item){
-            this.$router.push({name: 'chat-room', params: {roomName: item} });
-            this.chatStore.setActiveRoom(item);
-            console.log("Entrou na sala:", item);
+            this.$router.push({name: 'chat-room', params: {roomName: item.name} });
+            this.chatStore.setActiveRoom(item.name);
+            console.log("Entrou na sala:", item.name);
         },
-        
-    }
+         isActiveItem(list) {
+            // Verifica se a lista tem o item ativo
+            return list.items.some(item => this.chatStore.activeRoom === item.name);
+        },
+        activeItem(list) {
+            // Retorna o item ativo da lista
+            return list.items.find(item => this.chatStore.activeRoom === item.name);
+        }
+    },
+
 }
 </script>
 
@@ -57,7 +79,9 @@ export default {
 .lists{
    display: flex;
    flex-direction: column;
-   padding: 40px 25px;
+   padding: 40px 60px;
+
+   max-width: 90%;
 
    gap: 20px;
    flex-grow: 1;
@@ -112,5 +136,6 @@ export default {
 
 .active {
    background-color: rgba(255, 255, 255, 0.1);
+
 }
 </style>

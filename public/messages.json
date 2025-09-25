@@ -24,9 +24,13 @@
   "BFFs": [
     { "id": 19, "nickname": "raayh", "text": "Vamos marcar um cinema?", "date": "2025-09-21T18:30:00Z" },
     { "id": 20, "nickname": "mat", "text": "Bora! Que dia?", "date": "2025-09-21T18:35:00Z" },
-    { "id": 21, "nickname": "mat", "text": "Bora! Que dia?", "date": "2025-09-21T18:40:00Z" }
+    { "id": 21, "nickname": "ana", "text": "Bora! Que dia?", "date": "2025-09-21T18:40:00Z" }
   ],
   "Mat": [
+    { "id": 22, "nickname": "raayh", "text": "Vamos marcar um cinema?", "date": "2025-09-21T18:30:00Z" },
+    { "id": 23, "nickname": "mat", "text": "Bora! Que dia?", "date": "2025-09-21T19:00:00Z" }
+  ],
+  "Raayh": [
     { "id": 22, "nickname": "raayh", "text": "Vamos marcar um cinema?", "date": "2025-09-21T18:30:00Z" },
     { "id": 23, "nickname": "mat", "text": "Bora! Que dia?", "date": "2025-09-21T19:00:00Z" }
   ],

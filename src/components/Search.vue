@@ -1,33 +1,26 @@
 <template>
-    <div class="container" @keyup.esc="showSearchModal=false">
-        <div class="box" v-for="(message, index) in searchMessage" :key="index">
-            <p class="room-title">
-                {{ message.room }}
-            </p>
-            <div class="box-message" v-if="searchMessage.length  >= 1">
-             
-                <div class="status-message">
-                    <p class="user-name-message" v-if="!isMyMessage(message)">{{message.nickname}}</p>
-                    <p class="user-name-message" v-else>Você</p>
-                    <p class="wd-message">{{ formatWeekday(message.date)}}</p>
-                    <p class="hour-message">{{ formatTime(message.date) }}</p>
-                </div>
-                <div  class="message">
-                        <img 
-                        v-if="!isMyMessage(message)"
-                        :src="'https://i.pravatar.cc/150?img=' + message.id" 
-                        class="message-avatar-image">
-                        
-                        <div class="messages">
-                            <p :class="textMessageClasses(message)">{{message.text}}</p>
-                        </div>
+    <div class="container">
+        <div class="box" v-for="(message, index) in searchMessage" :key="index" >
+            <div class="box-message" v-if="searchMessage.length  > 0">
+                <img :src="'https://i.pravatar.cc/150?img=' + message.id" class="message-avatar-image">
+
+                <div  class="search-message">
+                    <div class="status-msg">
+                        <p class="user-name-message" v-if="!isMyMessage(message)">{{message.nickname}}</p>
+                        <p class="user-name-message" v-else>Você</p>
+                        <p class="wd-message">{{ formatWeekday(message.date)}}</p>
+                        <p class="hour-message">{{ formatTime(message.date) }}</p>
+                    </div>
+                       
+                    <div class="message-ballo">
+                        <p class="text-msg">{{message.text}}</p>
+                    </div>
                 </div>
 
             </div>
             
-            <div v-else class="noResult"> console.log(Nenhuma mensagem foi encontrada) </div>
+            <p v-else class="text-msg"> Nenhuma mensagem encontrada </p>
         </div>
-
     </div>
 </template>
 
@@ -37,8 +30,11 @@ import ChatMessage from '@/components/ChatMessage.vue'
 
 export default {
     props: {
-        searchMessage:{
-            type: Object
+        searchText:{
+            type: String
+        },
+        showSearchModal:{
+            type: Boolean
         }
     },
     components:{
@@ -46,27 +42,23 @@ export default {
     },
     computed: {
         chatStore (){
-            return useChatStore;
-        }
+            return useChatStore();
+        },
+        currentMessages() {
+         return this.chatStore.messagesByRoom[this.chatStore.activeRoom] || []
+        },
+        searchMessage(){
+         let itemsFiltered = [];
+         itemsFiltered = this.currentMessages.filter((message) => {
+            return (message.text.toLowerCase().indexOf(this.searchText.toLowerCase()) > -1)
+         }); 
+         return itemsFiltered;
+      }
     },
     methods:{
         isMyMessage(message) {
           // Lógica para saber se a mensagem é do usuário logado
           return message.nickname === this.chatStore.loggedInUser?.nickname;
-        },
-        messageClasses(message) {
-          // Classe para o alinhamento da mensagem
-          return {
-              'my-messages': this.isMyMessage(message),
-              'others-messages': !this.isMyMessage(message)
-          };
-        },
-        textMessageClasses(message) {
-          // Classe para a cor da bolha do chat
-          return {
-              'my-text': this.isMyMessage(message),
-              'text-message': !this.isMyMessage(message)
-          };
         },
         formatWeekday(dateString) {
          const date = new Date(dateString);
@@ -92,7 +84,9 @@ export default {
     width: 260px;
 
     background-color: #C8BEEA;
-    border-left: 1px solid #B4A7DF;    
+    border-left: 1px solid #B4A7DF;  
+    
+    overflow-y: auto;
 }
 
 .box {
@@ -104,6 +98,43 @@ export default {
 
     background-color: #C3B9E4;
     color: #3D2450;
+}
+
+.box-message{
+    display: flex;
+    flex-direction: row;
+
+    align-items: center;
+}
+
+.status-msg{
+   display: inline-flex;
+   flex-direction: row;
+   white-space: nowrap;
+   gap: 8px;
+
+   font-weight: 250;
+   font-size: 13px;
+}
+
+.message-avatar-image{
+   width: 36px;
+   height: 36px;
+
+   border-radius: 50%; 
+   object-fit: cover;
+
+   margin-right: 10px;
+}
+
+.message-ballo{
+    max-width: 80%;
+}
+
+.text-msg{
+   max-width: 100%;
+   
+   overflow-wrap: break-word;
 }
 
 </style>

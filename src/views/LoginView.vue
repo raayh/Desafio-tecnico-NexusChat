@@ -44,9 +44,9 @@
       // Carrega o estado inicial da store
       this.chatStore.init();
       // Se houver um usuário logado, redireciona para o chat
-      if (this.chatStore.loggedInUser) {
-        this.$router.push('/chat');
-      }
+      // if (this.chatStore.loggedInUser) {
+      //   this.$router.replace('/chat');
+      // }
     },
 
       methods: {
@@ -57,7 +57,7 @@
 
           if(result.status === "success"){
             toast.success(`Bem-vindo(a), ${result.user.nickname} !`);
-            this.$router.push('/chat');
+            this.$router.replace('/chat');
           } else if (result.status === "wrong-password"){
             toast.error("Senha incorreta. Tente novamente.");
           } else if (result.status === "not-found"){
@@ -69,7 +69,7 @@
           const result = this.chatStore.addUser(this.nickname, this.password);
           if(result.status === "created"){
             toast.success(`Bem-vindo, ${result.user.nickname} !`);
-            this.$router.push('/chat');
+            this.$router.replace('/chat');
           } else if (result.status === "already-exists"){
             toast.warning("Esse nickname já está em uso, escolha outro para continuar.");
           }
@@ -108,8 +108,8 @@
 }
 
 .img-logo{
-  width: 66px;
-  height: 66px;
+  width: 50px;
+  height: 50px;
   margin-right: 10px;
 }
 

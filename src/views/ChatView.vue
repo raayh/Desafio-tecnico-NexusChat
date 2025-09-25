@@ -4,13 +4,14 @@
       <div class="sidebar">
 
          <div class="user-info">
-
-            <div class="avatar">
-               <img src="https://i.pravatar.cc/150?img=30" alt="" class="avatar-image">
+            <div class="avatar" @click="toggleUserDetails">
+               <img :src="chatStore.avatarUrl(chatStore.loggedInUser?.nickname)"  alt="" class="avatar-image">
                <p class="avatar-name">{{chatStore.loggedInUser?.nickname}}</p>
             </div>
-            <img src="../assets/icons/more.png" alt="" class="more-image">
+            <!-- <img src="../assets/icons/more.png" alt="" class="more-image"> -->
          </div>
+
+         <userDetails v-if="showUserDetails":isDirectMessage="isDirectMessage"/>
 
          <SidebarLists />
 
@@ -22,28 +23,29 @@
 
       <div class="chat">
          
-            <div class="top-bar">
-   
-               <div class="chat-info">
-                  <h3 class="room-name"> {{ chatStore.activeRoom || "Selecione uma sala" }} </h3>
-                  <p class="online-status">10 pessoas online</p>
-               </div>
-   
-               <div class="topBar-actions">
-                  <img src="../assets/icons/notification.png" alt="" class="notifications">
-                  <img src="../assets/icons/Users.png" alt="" class="participants">
-                  <div class="search">
-                     <input type="text" v-model="searchText" @keyup.enter="showSearchModal=true, searchMessage" class="search-text" placeholder="Buscar">
-                     <img src="../assets/icons/search.png" alt="" class="search-icon">
-                  </div>
-   
-               </div>
-   
+         <div class="top-bar">
+
+            <div class="chat-info">
+               <h3 class="room-name"> {{ chatStore.activeRoom || "Selecione uma sala" }} </h3>
+               <p @click="toggleOnlineModal" v-if="!isDirectMessage" class="online"> {{chatStore.onlineUsersCount}} pessoas online  </p>
+               <p v-else > {{ isDirectMessage.online ? 'Online' : 'Offline' }} </p>
             </div>
+
+            <div class="topBar-actions">
+               <div class="search" @click="toggleSearchModal">
+                  <input type="text" v-model="searchText"  class="search-text" placeholder="Buscar">
+                  <img v-if="!showSearchModal" src="../assets/icons/search.png" alt="" class="search-icon">
+                  <img v-else  @click.stop="showSearchModal = false" src="../assets/icons/close.png" alt="" class="close-icon">
+               </div>
+
+            </div>
+
+         </div>
+
          <div class="chat-body">
             
             <div class="chat-content">
-               <div class="messages-block" ref="messagesblock">
+               <div class="messages-block" ref="messagesblock" :class="{ 'is-scrolling': isScrolling }">
                   <ChatMessage />
                </div>
            
@@ -64,7 +66,10 @@
                </div>
             </div>
 
-            <Search v-if="showSearchModal" @keyup.esc="showSearchModal=false" :searchMessage="searchMessage" /> 
+            <Search v-if="showSearchModal" :searchText="searchText"/> 
+            
+            <OnlinePeopleList v-if="showOnlineModal" />
+
          </div>
 
       </div>
@@ -76,18 +81,26 @@ import { useChatStore } from '../stores/chat';
 import SidebarLists from '@/components/SidebarLists.vue';
 import ChatMessage from '@/components/ChatMessage.vue';
 import Search from '@/components/Search.vue';
+import OnlinePeopleList from '@/components/OnlinePeopleList.vue';
+import userDetails from '@/components/userDetails.vue';
 
 export default{
    components:{
       SidebarLists,
       ChatMessage,
-      Search
+      Search,
+      OnlinePeopleList,
+      userDetails
    },
    data() {
       return {
         newMessageText: '',
         searchText: '',
-        showSearchModal: false
+        showSearchModal: false,
+        showOnlineModal: false,
+        isScrolling: false,
+        scrollTimeout: null,
+        showUserDetails: false
       };
    },
    computed: {
@@ -97,13 +110,22 @@ export default{
       currentMessages() {
          return this.chatStore.messagesByRoom[this.chatStore.activeRoom] || []
       },
-      searchMessage(){
-         let itemsFiltered = [];
-         itemsFiltered = this.currentMessages.filter((message) => {
-            return (message.text.toLowerCase().indexOf(this.searchText.toLowerCase()) > -1)
-         }); 
-         return itemsFiltered;
-      }, 
+      isDirectMessage(){
+        const roomTitle = this.chatStore.activeRoom;
+         // Encontre a lista de "Mensagens Diretas" e armazene-a
+        const dmsList = this.chatStore.lists.find(list => list.title === 'Mensagens Diretas');
+        // Se a lista de DMs não existir, retorne falso
+        if (!dmsList || !dmsList.items) {
+            return false;
+        }
+        // Encontre o objeto do contato da DM
+        const dmContact = dmsList.items.find(item => item.name === roomTitle);
+        // Se o contato for encontrado, retorne o objeto dele, senão retorne falso
+        if (dmContact) {
+            return dmContact;
+        }
+        return false;
+      }
    },
    methods: {
       sendMessage(){
@@ -132,19 +154,41 @@ export default{
                container.scrollTop = container.scrollHeight;
             }
          });
-      }
+      },
+      toggleSearchModal(){
+         this.showOnlineModal = false;
+         this.showSearchModal = !this.showSearchModal
+      },
+      toggleOnlineModal(){
+         this.showSearchModal = false;
+         this.showOnlineModal = !this.showOnlineModal
+      },
+      toggleUserDetails(){
+         // this.showSearchModal = false;
+         this.showUserDetails = !this.showUserDetails
+      },
+      handleScroll(){
+         this.isScrolling = true; 
+
+         if(this.scrollTimeout){clearTimeout(this.scrollTimeout)}
+         this.scrollTimeout = setTimeout(() => {this.isScrolling = false;}, 1000);
+      },
    },
    watch: {
     // O watcher observa a propriedade computada `currentMessages`
     currentMessages() {
       this.scrollToBottom();
-    }
+    },
    },
    mounted() {
-      if (!this.chatStore.loggedInUser) {
-        this.$router.push('/');
-      }  
+      // if (!this.chatStore.loggedInUser) {
+      //   this.$router.push('/');
+      // }  
       this.scrollToBottom();
+      this.$refs.messagesblock.addEventListener('scroll', this.handleScroll);
+   },
+   beforeUnmount(){
+      this.$refs.messagesblock.removeEventListener('scroll', this.handleScroll);
    }
 }
 </script>
@@ -177,9 +221,7 @@ export default{
    flex-direction: row; 
    justify-content: space-between; 
 
-   align-items: center;
-
-   padding: 12px 25px;
+   padding: 8px 25px;
 
    border-bottom: 1px solid #C8BEEA;
 }
@@ -187,6 +229,13 @@ export default{
 .avatar{
    display: flex;
    flex-direction: row;
+   align-items: center;
+
+   border-radius: 8px;
+
+   width: 100%;
+
+   padding: 5px;
 }
 
 .avatar-image{
@@ -203,9 +252,12 @@ export default{
    font-size: 20px;
    font-weight: bold;
 
-   margin: auto;
-
    color: #C8BEEA;
+}
+
+.avatar:hover{
+   background-color: rgba(255, 255, 255, 0.1);
+   cursor: pointer;
 }
 
 /* Rodapé sidebar */
@@ -255,19 +307,20 @@ export default{
 
    justify-content: space-between;
    
-   padding: 15px 40px;
+   padding: 18px 40px;
 
    border-bottom: 1px solid #B4A7DF;
 
    color: #3D2450;
 }
 
-.chat-info > .online-status{
+.chat-info > .online{
    opacity: 60%;
 }
 
-.online-status:hover{
+.online:hover{
    font-weight: 500;
+   cursor: pointer;
 }
 
 /* Icones de ação */
@@ -303,11 +356,15 @@ export default{
    padding: 6px 21px 6px 15px;
 }
 
+.search-text:focus{
+   outline: none;
+}
+
 .search-text::placeholder{
    color: #3D2450;
 }
 
-.search-icon{
+.search-icon, .close-icon{
    position: absolute;
 
    right: 10px;
@@ -331,19 +388,17 @@ export default{
   width: 10px; /* Largura do scrollbar */
 }
 
-.messages-block::-webkit-scrollbar-thumb{
-  background-color: transparent /* Largura do scrollbar */
-}
-
-.messages-block:hover::-webkit-scrollbar-thumb{
+.messages-block.is-scrolling::-webkit-scrollbar-thumb{
   background: #583BBF; /* Largura do scrollbar */
   border-radius: 10px;
   border: 2px solid #C8BEEA;
-  
+  opacity: 1; /* Opacidade total */
+   transition: opacity 0.5s ease-in-out;
 }
-
-
-
+.messages-block.is-scrolling.fade-out::-webkit-scrollbar-thumb{
+  background-color: transparent ;
+  transition: background-color 3s ease-in-out;/* Largura do scrollbar */
+}
 /* Input de mensagem */
 
 .message-bar {
@@ -364,6 +419,10 @@ export default{
    color: #3D2450;
 
    padding: 18px 45px;
+}
+
+.new-message:focus{
+   outline: none;
 }
 
 .new-message-icons{
