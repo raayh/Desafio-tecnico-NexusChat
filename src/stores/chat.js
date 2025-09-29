@@ -1,9 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios';
 
-function normalizeNickname(nickname) {
-  return nickname.trim().toLowerCase();
-}
 
 export const useChatStore = defineStore("chat", {
    state: () => ({
@@ -47,12 +44,13 @@ export const useChatStore = defineStore("chat", {
       activeRoom: 'Geral',       
       messagesByRoom: {},
       newMessage: [],
+      visibleMessagesCount: {}
     }),
 
     getters: {
       avatarUrl: (state) => (nickname) => {
             const user = state.users.find(u => u.nickname === nickname)
-            if (!user) return "https://i.pravatar.cc/150?img=7" // fallback
+            if (!user) return "https://i.pravatar.cc/150?img=4" // fallback
             return `https://i.pravatar.cc/150?img=${user.avatarId}`
       },
       activeRoomUsers(state) { // retorna os usuários no chat
@@ -72,6 +70,7 @@ export const useChatStore = defineStore("chat", {
                     online: user?.online || false
                 }
             })
+            
       },
       onlineUsersCount() { // retorna a qtd de usuários onlines
             // 1. Usa o resultado de `activeRoomUsers`.
@@ -86,8 +85,6 @@ export const useChatStore = defineStore("chat", {
             return this.activeRoomUsers.filter(user => !user.online).length;
       }
    },
-
-
     actions: {
      // Inicializa a store carregando do localStorage
       async init() {
@@ -95,7 +92,8 @@ export const useChatStore = defineStore("chat", {
          this.loggedInUser = JSON.parse(localStorage.getItem("loggedInUser")) || null;
          this.activeRoom = JSON.parse(localStorage.getItem("activeRoom")) || "Geral";
          this.messagesByRoom = JSON.parse(localStorage.getItem("messagesByRoom")) || {};
-
+         this.lists = JSON.parse(localStorage.getItem("lists")) || this.lists;
+         
          // Se não tiver nada no localStorage ainda, carrega do arquivo JSON
          if (Object.keys(this.messagesByRoom).length === 0) {
             try {
@@ -106,25 +104,28 @@ export const useChatStore = defineStore("chat", {
                console.error("Erro ao carregar mensagens:", error);
             }
          }
-      },
 
+         Object.keys(this.messagesByRoom).forEach(room => {
+            if (!this.visibleMessagesCount[room]) {
+               this.visibleMessagesCount[room] = Math.min(10, this.messagesByRoom[room].length);
+            }
+         });
+      },
      // ---------- AUTH ----------
       login(nickname, password) {
-         const normalizedNickname = normalizeNickname(nickname);
          const user = this.users.find(user => user.nickname === nickname);
          
          if(!user) return { status: "not-found" }; 
          if (user.password !== password) return { status: "wrong-password" };
-
+         if(user) {user.online = true}
          this.loggedInUser = user;
          
-         if(user) {user.online = true}
+         
          localStorage.setItem("loggedInUser", JSON.stringify(this.loggedInUser));
          return { status: "success", user };
       },
-
       addUser(nickname, password) {
-         const normalizedNickname = normalizeNickname(nickname);
+
          const exists = this.users.find(user => user.nickname === nickname);
          if(exists) return { status: "already-exists" };
 
@@ -135,20 +136,64 @@ export const useChatStore = defineStore("chat", {
             avatarId: Math.floor(Math.random() * 70) + 1
          };
          
-         this.addUserToGeneral(newUser)
-         this.addUserToFavorite(newUser)
+         this.addUserToGeneral(newUser.nickname)
          this.users.push(newUser);
          this.loggedInUser = newUser;
             
          localStorage.setItem("users", JSON.stringify(this.users));
          localStorage.setItem("loggedInUser", JSON.stringify(this.loggedInUser));
+         localStorage.setItem("lists", JSON.stringify(this.lists));
 
          return { status: "created", user: newUser };
+      },
+      logout(){
+         const nickname = this.loggedInUser.nickname;
+
+         // Marca o usuário como offline
+         const user = this.users.find(u => u.nickname === nickname);
+         if (user) {
+            user.online = false;
+         }
+
+         // Mantém o objeto no localStorage mas sem status online
+         this.loggedInUser.online = false;
+         localStorage.setItem("users", JSON.stringify(this.users));
+         localStorage.removeItem("loggedInUser");
+
+         // Reseta o loggedInUser na store
+         this.loggedInUser = null;
+      },
+      changeStatus(nickname){
+         const user = this.users.find(user => user.nickname == nickname);
+          if (user) {
+            user.online = !user.online;
+         }
+         // Se for o usuário logado, sincroniza
+         if (this.loggedInUser?.nickname === nickname) {
+            this.loggedInUser.online = user.online;
+         }
+         localStorage.setItem("users", JSON.stringify(this.users));
+         localStorage.setItem("loggedInUser", JSON.stringify(this.loggedInUser));
       },
       // ---------- ROOMS ----------
       setActiveRoom(room){
          this.activeRoom = room;
+         if (!this.visibleMessagesCount[room]){
+            this.visibleMessagesCount[room] = 10; //inicia o chat com 10 mensagens.
+         }
          localStorage.setItem("activeRoom", JSON.stringify(this.activeRoom));
+      },
+      async loadMoreMessages(room){
+         const totalMessages = this.messagesByRoom[room]?.length || 0;
+         const currentVisible = this.visibleMessagesCount[room] || 0;
+
+         if(currentVisible < totalMessages){
+            const increment = 10;
+            const nextCount = Math.min(currentVisible + increment, totalMessages);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // ajuste o tempo aqui
+            // ✅ Só atualiza o contador, sem delay
+            this.visibleMessagesCount[room] = nextCount;
+         }
       },
       toggleList(listTitle) {
          // Encontra a lista no estado da store
@@ -169,18 +214,6 @@ export const useChatStore = defineStore("chat", {
             }
          }
       },
-      addUserToFavorite(userNickname) {
-         const roomsList = this.lists.find(list => list.title === 'Favoritos');
-         
-         if (roomsList) {
-            const favoriteRoom = roomsList.items.find(item => item.name === '(Eu)');
-         
-         if (favoriteRoom && !favoriteRoom.participants.includes(userNickname)) {
-               favoriteRoom.participants.push(userNickname);
-            }
-         }
-      },
-
       // ---------- MESSAGES ----------
       addNewMessage(newMessage){
          if (!this.messagesByRoom[this.activeRoom]) {
@@ -188,6 +221,8 @@ export const useChatStore = defineStore("chat", {
          }
          this.messagesByRoom[this.activeRoom].push(newMessage);
          localStorage.setItem("messagesByRoom", JSON.stringify(this.messagesByRoom));
+
+
       }
     }
 })

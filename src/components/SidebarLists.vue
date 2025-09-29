@@ -6,7 +6,7 @@
                 <p class="title-list">{{list.title}}</p>
             </div>
     
-            <ul v-if="list.isOpen" class="list-content">
+            <ul v-if="list.isOpen && list.items.length > 0" class="list-content">
                 <li v-for="item in list.items" 
                     :key="item" 
                     class="menu-item"
@@ -16,6 +16,14 @@
                     <p>{{item.name}}</p>
             
                 </li>
+            </ul>
+
+             <ul v-else-if="list.isOpen && list.title === 'Favoritos'" class="list-content-empty">
+                <p> Seus favoritos aparecerão aqui. </p>
+            </ul>
+
+            <ul v-else-if="list.isOpen && list.title === 'Mensagens Diretas'" class="list-content-empty">
+                <p> Encontre amigos e inicie uma conversa </p>
             </ul>
 
             <ul v-else class="list-content">
@@ -42,16 +50,21 @@ export default {
             const userId = this.chatStore.loggedInUser?.nickname;
             
             const filteredLists = 
-                this.chatStore.lists.map(list => ({
-                    ...list,
-                    items: 
-                    list.items.filter(item => item.participants.includes(userId)
-                )
-                }));
-            
-            // Adicione o console.log aqui
-            // console.log('Lista filtrada para o usuário:', filteredLists);
-
+                this.chatStore.lists.map(list => {
+                    if(list.title === 'Salas') {
+                    // Adicione a sala Geral a todos os usuários
+                        return {
+                            ...list,
+                            items: list.items.filter(item => item.participants.includes(userId) || item.name === 'Geral')
+                        };
+                    } 
+                    return { 
+                        ...list,
+                        items: 
+                        list.items.filter(item => item.participants.includes(userId))
+                    };
+                });
+            console.log('Lista filtrada para o usuário:', filteredLists);
             return filteredLists;
         }
     },
@@ -62,7 +75,7 @@ export default {
             this.chatStore.setActiveRoom(item.name);
             console.log("Entrou na sala:", item.name);
         },
-         isActiveItem(list) {
+        isActiveItem(list) {
             // Verifica se a lista tem o item ativo
             return list.items.some(item => this.chatStore.activeRoom === item.name);
         },
@@ -75,11 +88,12 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .lists{
    display: flex;
    flex-direction: column;
-   padding: 40px 60px;
+   padding: 20px 40px;
+   box-sizing: border-box;
 
    max-width: 90%;
 
@@ -91,7 +105,7 @@ export default {
    display: flex;
    flex-direction: row; 
    align-items: center;
-   
+   overflow-wrap: break-word;
    margin-bottom: 8px;
    
    cursor: pointer;
@@ -117,12 +131,28 @@ export default {
    overflow: hidden; 
 }
 
+.list-content-empty{
+    font-size: 12px;
+    background-color: rgba(255, 255, 255, 5%);
+    padding: 5px 15px;
+    border-radius: 8px;
+    /* color: ; */
+}
+
+.list-header, .menu-item{
+    font-size: 14px;
+   text-overflow: ellipsis;
+   max-width: 100%;
+}
+
+
 .menu-item {
    display: flex;
    align-items: center;
 
    padding: 5px 15px;
    margin-bottom: 7px;
+   
 
    border-radius: 8px;
 
@@ -136,6 +166,22 @@ export default {
 
 .active {
    background-color: rgba(255, 255, 255, 0.1);
+
+}
+
+@media (max-width: 425px){
+    .list-header, .menu-item{
+        white-space: normal;      /* Permite que o texto quebre a linha */
+        overflow: visible;      /* Torna o texto visível */
+        text-overflow: unset;    /* Reseta a propriedade de três pontos */
+        overflow-wrap: break-word;   /* Força a quebra de palavras muito longas */
+        max-width: 100%;
+    }
+
+    .list{
+        padding: 20px;
+        gap: 10;
+    }
 
 }
 </style>

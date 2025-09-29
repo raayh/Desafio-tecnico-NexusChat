@@ -35,7 +35,10 @@ export default{
          return useChatStore();
       },
       currentMessages() {
-         return this.chatStore.messagesByRoom[this.chatStore.activeRoom] || []
+         const room = this.chatStore.activeRoom;
+         const total = this.chatStore.messagesByRoom[room] || [];
+         const count = this.chatStore.visibleMessagesCount[room] || 0;
+         return total.slice(-count); 
       },
     },
     methods: { 

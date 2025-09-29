@@ -6,7 +6,6 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 
-import { useAuthStore } from './stores/auth'
 import { useChatStore } from './stores/chat'
 import Toast, {useToast} from "vue-toastification"
 import "vue-toastification/dist/index.css"

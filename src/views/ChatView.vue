@@ -1,7 +1,7 @@
 <template>
-   <div class="body">
+   <div class="body" :class="{'sidebar-collapsed': isSidebarCollapsed}">
 
-      <div class="sidebar">
+      <div class="sidebar"  ref="sidebar">
 
          <div class="user-info">
             <div class="avatar" @click="toggleUserDetails">
@@ -25,6 +25,10 @@
          
          <div class="top-bar">
 
+            <div class="menu-button" @click.stop="toggleSidebar">
+                <img src="../assets/icons/menu.png" alt="Menu">
+             </div>
+
             <div class="chat-info">
                <h3 class="room-name"> {{ chatStore.activeRoom || "Selecione uma sala" }} </h3>
                <p @click="toggleOnlineModal" v-if="!isDirectMessage" class="online"> {{chatStore.onlineUsersCount}} pessoas online  </p>
@@ -35,17 +39,17 @@
                <div class="search" @click="toggleSearchModal">
                   <input type="text" v-model="searchText"  class="search-text" placeholder="Buscar">
                   <img v-if="!showSearchModal" src="../assets/icons/search.png" alt="" class="search-icon">
-                  <img v-else  @click.stop="showSearchModal = false" src="../assets/icons/close.png" alt="" class="close-icon">
+                  <img v-else @click.stop="clearSearch" src="../assets/icons/close.png" alt="" class="close-icon">
                </div>
 
             </div>
-
          </div>
 
          <div class="chat-body">
             
             <div class="chat-content">
-               <div class="messages-block" ref="messagesblock" :class="{ 'is-scrolling': isScrolling }">
+               <div class="messages-block" ref="messagesblock" @scroll="handleScroll" :class="{ 'is-scrolling': isScrolling }">
+                  <div v-if="loadingMore" class="loading-more">Carregando mais...</div>
                   <ChatMessage />
                </div>
            
@@ -96,11 +100,15 @@ export default{
       return {
         newMessageText: '',
         searchText: '',
+
         showSearchModal: false,
         showOnlineModal: false,
+        showUserDetails: false,
+
+        isSidebarCollapsed: true,
         isScrolling: false,
         scrollTimeout: null,
-        showUserDetails: false
+        loadingMore: false
       };
    },
    computed: {
@@ -108,7 +116,10 @@ export default{
          return useChatStore();
       },
       currentMessages() {
-         return this.chatStore.messagesByRoom[this.chatStore.activeRoom] || []
+         const room = this.chatStore.activeRoom;
+         const total = this.chatStore.messagesByRoom[room] || [];
+         const count = this.chatStore.visibleMessagesCount[room] || 0;
+         return total.slice(-count);       
       },
       isDirectMessage(){
         const roomTitle = this.chatStore.activeRoom;
@@ -129,9 +140,12 @@ export default{
    },
    methods: {
       sendMessage(){
+         const room = this.chatStore.activeRoom;
+         const messages = this.chatStore.messagesByRoom[room];
+        
          if(!this.newMessageText == ''){
             const newMessage = {
-               // id: Date.now(),
+               id: (Math.max(...messages.map(m => m.id)) + 1),
                nickname: this.chatStore.loggedInUser.nickname.trim().toLowerCase(),
                text: this.newMessageText,
                date: new Date().toISOString(),
@@ -159,19 +173,61 @@ export default{
          this.showOnlineModal = false;
          this.showSearchModal = !this.showSearchModal
       },
+      clearSearch() {
+         this.searchText = '';
+         
+         // this.showSearchModal = false;
+      },
       toggleOnlineModal(){
          this.showSearchModal = false;
          this.showOnlineModal = !this.showOnlineModal
       },
       toggleUserDetails(){
-         // this.showSearchModal = false;
+         this.showSearchModal = false;
          this.showUserDetails = !this.showUserDetails
       },
-      handleScroll(){
-         this.isScrolling = true; 
+      toggleSidebar() {
+            this.isSidebarCollapsed = !this.isSidebarCollapsed;
+      },
+      handleEsc(event) {
+         if (event.key === "Escape") {
+            if (this.showUserDetails) {
+               this.showUserDetails = false;
+            }
 
-         if(this.scrollTimeout){clearTimeout(this.scrollTimeout)}
-         this.scrollTimeout = setTimeout(() => {this.isScrolling = false;}, 1000);
+            else if (this.showOnlineModal) {
+               this.showOnlineModal = false;
+            }
+
+            else if (this.showSearchModal) {
+               this.showSearchModal = false;
+            }
+
+            else if (!this.isSidebarCollapsed) {
+               this.isSidebarCollapsed = true;
+            }
+         }
+      },
+      async handleScroll(e){
+         this.isScrolling = true;
+
+         if(this.scrollTimeout) clearTimeout(this.scrollTimeout);
+         this.scrollTimeout = setTimeout(() => this.isScrolling = false, 1000);
+
+         const container = e.target;
+         if(container.scrollTop === 0 && !this.loadingMore){
+            this.loadingMore = true; // ✅ ativa o "carregando mais"
+            const oldHeight = container.scrollHeight;
+
+            // Chama a store, mas sem delay extra na store
+            await this.chatStore.loadMoreMessages(this.chatStore.activeRoom);
+
+            this.$nextTick(() => {
+               const newHeight = container.scrollHeight;
+               container.scrollTop = newHeight - oldHeight;
+               this.loadingMore = false; // ✅ desativa o "carregando mais"
+            });    
+         } 
       },
    },
    watch: {
@@ -181,13 +237,15 @@ export default{
     },
    },
    mounted() {
-      // if (!this.chatStore.loggedInUser) {
-      //   this.$router.push('/');
-      // }  
+      document.addEventListener("keydown", this.handleEsc);
+
       this.scrollToBottom();
       this.$refs.messagesblock.addEventListener('scroll', this.handleScroll);
    },
    beforeUnmount(){
+      document.removeEventListener("click", this.handleClickOutside);
+      document.removeEventListener("keydown", this.handleEsc);
+
       this.$refs.messagesblock.removeEventListener('scroll', this.handleScroll);
    }
 }
@@ -249,10 +307,17 @@ export default{
 }
 
 .avatar-name{
+   display: block;
    font-size: 20px;
    font-weight: bold;
 
    color: #C8BEEA;
+
+   /* ... seus estilos existentes ... */
+   white-space: nowrap;          /* Impede que o texto quebre a linha */
+   overflow: hidden;             /* Oculta o texto que excede o contêiner */
+   text-overflow: ellipsis;      /* Adiciona '...' ao final do texto cortado */
+   max-width: 150px;
 }
 
 .avatar:hover{
@@ -269,6 +334,12 @@ export default{
 .logo-image{
    width: 44px;
 }
+
+.menu-button {
+    display: none; /* Escondido por padrão */
+}
+
+
 
 /* Lado da conversa */
 
@@ -399,6 +470,24 @@ export default{
   background-color: transparent ;
   transition: background-color 3s ease-in-out;/* Largura do scrollbar */
 }
+
+.loading-more {
+  text-align: center;
+  padding: 5px;
+  color: #3D2450;
+  font-weight: bold;
+}
+
+/* .loading-more::after {
+  animation: blink 1s infinite;
+} */
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+
 /* Input de mensagem */
 
 .message-bar {
@@ -428,7 +517,70 @@ export default{
 .new-message-icons{
    position: absolute;
    top: 22%;
-   right: 45px;
+   right:2%;
 }
+@media (max-width: 425px) {
+   .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
 
+      width: 45%;
+      z-index: 100;
+
+      transform: translateX(0); /* Esconde a sidebar */
+      transition: transform 0.3s ease-in-out;
+   }
+   .sidebar-collapsed .sidebar {
+      transform: translateX(-100%); /* Mostra a sidebar ao clicar */
+   }
+   .avatar-name{
+      display: none;
+   }
+   /* .chat-info{
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 5px;
+   } */ 
+    .top-bar {
+      padding: 10px 20px; /* Reduz o padding da barra superior */
+      justify-content: space-between;
+      align-items: center;
+    }
+   .chat {
+      width: 100%; /* O chat ocupa a tela toda */
+   }
+   .menu-button {
+      display: block; /* Mostra o botão de menu */
+      /* position: fixed;
+      top: 18px;
+      left: 10px;
+      z-index: 101; */
+   }
+   .search-text {
+      width: 150px; /* Reduz a largura */
+      font-size: 12px;
+    }
+
+   .messages-block{
+      padding: 30px 20px;
+      
+   }
+
+   .message-bar{
+      margin: 5px;
+   }
+    .new-message {
+      padding: 10px 20px; /* Reduz o padding */
+      font-size: 12px;
+    }
+
+   .new-message-icons{
+      position: absolute;
+      top: 5%;
+      right: 3%;
+   }
+   
+}
 </style>

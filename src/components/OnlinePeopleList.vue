@@ -1,18 +1,12 @@
 <template>
-    <div class="container">
+    <div class="container-on">
 
         <p class="status-online"> Online - {{chatStore.onlineUsersCount}} </p>
         <div class="box-list" v-for="(user, index) in chatStore.activeRoomUsers" :key="index">
             <div class="list" v-if="user.online">
                 <img :src="chatStore.avatarUrl(user.nickname)" class="user-avatar-image">
                 <p class="user-name-message">{{user.nickname}} 
-                    <span 
-                        class="status-indicator" 
-                        :class="{ 
-                            'online-status': user.online, 
-                            'offline-status': !user.online 
-                        }"
-                    ></span>
+                    <span class="status-indicator" :class="{'online-status': user.online, 'offline-status': !user.online}"></span>
                 </p>
             </div>
         </div>
@@ -53,9 +47,7 @@ export default {
         },
         currentMessages() {
             return this.chatStore.messagesByRoom[this.chatStore.activeRoom] || []
-        } ,
-
-
+        } 
     },
     mounted(){
     }
@@ -64,12 +56,12 @@ export default {
 </script>
 
 <style>
-.container {
+.container-on {
     display: flex;
     flex-direction: column;
 
     padding: 25px;
-    width: 260px;
+    width: 20%;
 
     background-color: #C8BEEA;
     border-left: 1px solid #B4A7DF;  
@@ -129,5 +121,20 @@ export default {
 
 .offline-status {
   background-color: #D9D9D9; 
+}
+
+@media(max-width: 425px){
+    .container-on {
+        position: absolute; /* Posição em relação ao .chat-body */
+        top: 13%;
+        right: 0;
+
+        padding: 15px;
+        
+        width: 45%; /* Ocupa a largura total da tela */
+        height: 100%; /* Ocupa a altura total do .chat-body */
+        z-index: 99; /* Garante que o modal fique por cima de tudo */
+        background-color: rgba(200, 190, 234, 0.9); /* Cor de fundo semi-transparente */
+    }
 }
 </style>

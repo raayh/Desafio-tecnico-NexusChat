@@ -11,7 +11,16 @@
         <p class="title-login">Faça login ou cadastre-se</p>
         
         <input type="text" v-model="nickname" placeholder="Insira seu nickname">
-        <input type="password" v-model="password" placeholder="Insira sua senha">
+        
+        <div class="password-container">
+          <input :type="isPasswordVisible ? 'text' : 'password'" v-model="password" placeholder="Insira sua senha">
+          
+          <img 
+            :src="isPasswordVisible ? 'src/assets/icons/eye.png' : 'src/assets/icons/hiddenEye.png'" 
+            class="toggle-password"
+            @click="isPasswordVisible = !isPasswordVisible"
+          >
+        </div>
 
         <div class="btn">
           <button @click="addUser()" class="create">Criar</button>
@@ -25,12 +34,14 @@
   <script>
     import { useChatStore } from '../stores/chat';
     import { useToast } from "vue-toastification";
-  
+     
     export default {
+      
       data (){
         return {
           nickname: '',
-          password: ''
+          password: '',
+          isPasswordVisible: false
         };
       },
 
@@ -39,17 +50,18 @@
           return useChatStore();
         },
       },
-
-      mounted() {
-      // Carrega o estado inicial da store
-      this.chatStore.init();
-      // Se houver um usuário logado, redireciona para o chat
-      // if (this.chatStore.loggedInUser) {
-      //   this.$router.replace('/chat');
-      // }
+      watch: {
+      nickname(newValue) {
+        const lowercaseValue = newValue.toLowerCase();
+        const trimmedValue = lowercaseValue.trim();
+        this.nickname = trimmedValue;
+      },
+      password(newValue) {
+        const trimmedValue = newValue.trim();
+        this.password = trimmedValue;
+      }
     },
-
-      methods: {
+    methods: {
         
         login() {
           const toast = useToast();
@@ -75,6 +87,14 @@
           }
         }
       },
+    mounted() {
+      // Carrega o estado inicial da store
+      // this.chatStore.init();
+      // Se houver um usuário logado, redireciona para o chat
+      // if (this.chatStore.loggedInUser) {
+      //   this.$router.replace('/chat');
+      // }
+    },
     };
   </script>
 
@@ -152,6 +172,18 @@ input{
   min-width: 280px;
 }
 
+.password-container {
+  position: relative;
+  /* min-width: 280px; 
+  margin-bottom: 8px; */
+}
+
+.password-container img {
+  position: absolute; 
+  right: 10px;        
+  top: 10%;
+  cursor: pointer;
+}
 .btn{
   display: flex;
   justify-content: space-between;

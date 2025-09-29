@@ -1,5 +1,5 @@
 <template>
-    <div class="container">
+    <div class="container-search">
         <div class="box" v-for="(message, index) in searchMessage" :key="index" >
             <div class="box-message" v-if="searchMessage.length  > 0">
                 <img :src="'https://i.pravatar.cc/150?img=' + message.id" class="message-avatar-image">
@@ -76,7 +76,7 @@ export default {
 </script>
 
 <style>
-.container {
+.container-search{
     display: flex;
     flex-direction: column;
 
@@ -136,5 +136,26 @@ export default {
    
    overflow-wrap: break-word;
 }
+@media(max-width: 425px){
+    .container-search {
+        position: absolute; /* Posição em relação ao .chat-body */
+        top: 14%;
+        right: 0;
 
+        padding: 5px;
+        
+        width: 70%; /* Ocupa a largura total da tela */
+        height: 100%; /* Ocupa a altura total do .chat-body */
+        z-index: 99; /* Garante que o modal fique por cima de tudo */
+        background-color: rgba(200, 190, 234, 0.9); /* Cor de fundo semi-transparente */
+    }
+
+    .box{
+        background-color: #C8BEEA;
+        border-radius: 0;
+        border: none;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #B4A7DF
+    }
+}
 </style>
