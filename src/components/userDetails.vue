@@ -63,7 +63,7 @@ export default{
     align-items: flex-start;
 
     position: absolute;
-    top: 12%;
+    top: 10%;
     left: 2.5%;
 
     gap: 10px;
@@ -109,6 +109,7 @@ export default{
   margin-top: 8px; /* espaço pro avatar não sobrepor */
   padding: 16px 0px 8px 16px;
 }
+
 /* .avatar-name {
   font-weight: bold;
   font-size: 16px;
@@ -156,10 +157,6 @@ export default{
   padding: 8px;
 }
 
-/* .status img {
-  margin-left: 10%;
-} */
-
 .status span{
     margin: 0;
 }
@@ -171,4 +168,52 @@ export default{
   cursor: pointer;
   font-weight: 620;
 }
+
+@media(max-width: 425px){
+  .container-details{
+    width: 90%;
+  }
+
+  .banner{
+    height: 80px;
+  }
+
+  .avatar-container{
+    top: 35px; /* metade dentro do banner */
+  }
+
+}
+
+@media(max-width: 768px){
+  .container-details{
+    width: 20%;
+  }
+
+  .banner{
+    height: 80px;
+  }
+
+  .avatar-container{
+    top: 35px; /* metade dentro do banner */
+  }
+
+}
+
+@media(max-width: 2560px){
+  .container-details{
+    width: 15%;
+    top: 5%;
+  }
+
+  .banner{
+    height: 80px;
+  }
+
+  .avatar-container{
+    top: 35px; /* metade dentro do banner */
+  }
+
+}
+
+
 </style>

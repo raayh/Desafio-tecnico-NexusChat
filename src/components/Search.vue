@@ -2,7 +2,7 @@
     <div class="container-search">
         <div class="box" v-for="(message, index) in searchMessage" :key="index" >
             <div class="box-message" v-if="searchMessage.length  > 0">
-                <img :src="'https://i.pravatar.cc/150?img=' + message.id" class="message-avatar-image">
+                <img :src="chatStore.avatarUrl(message.nickname)" class="message-avatar-image">
 
                 <div  class="search-message">
                     <div class="status-msg">

@@ -38,8 +38,8 @@
             <div class="topBar-actions">
                <div class="search" @click="toggleSearchModal">
                   <input type="text" v-model="searchText"  class="search-text" placeholder="Buscar">
-                  <img v-if="!showSearchModal" src="../assets/icons/search.png" alt="" class="search-icon">
-                  <img v-else @click.stop="clearSearch" src="../assets/icons/close.png" alt="" class="close-icon">
+                  <img v-if="searchText.length == 0" src="../assets/icons/search.png" alt="" class="search-icon">
+                  <img v-if="searchText.length > 0" @click.stop="clearSearch" src="../assets/icons/close.png" alt="" class="close-icon">
                </div>
 
             </div>
@@ -171,7 +171,7 @@ export default{
       },
       toggleSearchModal(){
          this.showOnlineModal = false;
-         this.showSearchModal = !this.showSearchModal
+         this.showSearchModal = true
       },
       clearSearch() {
          this.searchText = '';
@@ -216,7 +216,7 @@ export default{
 
          const container = e.target;
          if(container.scrollTop === 0 && !this.loadingMore){
-            this.loadingMore = true; // ✅ ativa o "carregando mais"
+            this.loadingMore = true; 
             const oldHeight = container.scrollHeight;
 
             // Chama a store, mas sem delay extra na store
@@ -225,7 +225,7 @@ export default{
             this.$nextTick(() => {
                const newHeight = container.scrollHeight;
                container.scrollTop = newHeight - oldHeight;
-               this.loadingMore = false; // ✅ desativa o "carregando mais"
+               this.loadingMore = false; 
             });    
          } 
       },
@@ -235,6 +235,27 @@ export default{
     currentMessages() {
       this.scrollToBottom();
     },
+    newMessageText(newValue, oldValue) {
+      // Se a nova mensagem for mais longa que a anterior
+      if (newValue.length > oldValue.length) {
+            // Capitaliza a primeira letra da string
+            const firstChar = newValue.charAt(0).toUpperCase();
+            const restOfString = newValue.slice(1);
+            this.newMessageText = firstChar + restOfString;
+
+            // // Capitaliza a primeira letra após um ponto final
+            // const lastChar = oldValue.slice(-1);
+            // if (lastChar === '.' || lastChar === '!' || lastChar === '?') {
+            //    const lastDotIndex = newValue.lastIndexOf(lastChar);
+            //    if (lastDotIndex !== -1 && lastDotIndex < newValue.length - 1) {
+            //       const firstHalf = newValue.slice(0, lastDotIndex + 1);
+            //       const secondHalf = newValue.slice(lastDotIndex + 1);
+            //       const capitalizedSecondHalf = secondHalf.trim().charAt(0).toUpperCase() + secondHalf.trim().slice(1);
+            //       this.newMessageText = firstHalf + ' ' + capitalizedSecondHalf;
+            //    }
+            // }
+      }
+   },
    },
    mounted() {
       document.addEventListener("keydown", this.handleEsc);
@@ -582,5 +603,15 @@ export default{
       right: 3%;
    }
    
+}
+
+@media (max-width: 2560px){
+    .sidebar{
+      width: 20%;
+    }
+
+    .chat{
+      width: 80%;
+    }
 }
 </style>

@@ -121,7 +121,7 @@
 .topbar {
   display: flex;
   flex-direction: row;
-  text-align: center;
+  align-items: center;
 
   position: fixed;
   top: 25px;
@@ -172,6 +172,9 @@ input{
   min-width: 280px;
 }
 
+input:focus{
+   outline: none;
+}
 .password-container {
   position: relative;
   /* min-width: 280px; 

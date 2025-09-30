@@ -191,7 +191,7 @@ export const useChatStore = defineStore("chat", {
             const increment = 10;
             const nextCount = Math.min(currentVisible + increment, totalMessages);
             await new Promise(resolve => setTimeout(resolve, 1000)); // ajuste o tempo aqui
-            // ✅ Só atualiza o contador, sem delay
+            
             this.visibleMessagesCount[room] = nextCount;
          }
       },
