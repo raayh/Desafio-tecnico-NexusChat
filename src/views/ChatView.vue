@@ -145,14 +145,23 @@ export default{
         
          if(!this.newMessageText == ''){
             const newMessage = {
-               id: (Math.max(...messages.map(m => m.id)) + 1),
+               // id: (Math.max(...messages.map(m => m.id)) + 1),
                nickname: this.chatStore.loggedInUser.nickname.trim().toLowerCase(),
                text: this.newMessageText,
                date: new Date().toISOString(),
             };
 
-            this.chatStore.addNewMessage(newMessage);
+            if (this.chatStore.fayeClient) {
+               this.chatStore.fayeClient.publish('/messages', newMessage);
+             }
+
+            // this.chatStore.addNewMessage(newMessage);
             this.newMessageText = '';
+
+
+            //  console.log('this.fayeClient:', this.fayeClient);
+            // console.log('this.chatStore.fayeClient:', this.chatStore.fayeClient);
+
 
             this.scrollToBottom();
 
@@ -258,6 +267,8 @@ export default{
    },
    },
    mounted() {
+      this.chatStore.initFaye();
+
       document.addEventListener("keydown", this.handleEsc);
 
       this.scrollToBottom();
@@ -605,13 +616,4 @@ export default{
    
 }
 
-@media (max-width: 2560px){
-    .sidebar{
-      width: 20%;
-    }
-
-    .chat{
-      width: 80%;
-    }
-}
 </style>

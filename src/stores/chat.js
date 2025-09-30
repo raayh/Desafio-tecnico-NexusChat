@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios';
-
+import Faye from 'faye';
 
 export const useChatStore = defineStore("chat", {
    state: () => ({
@@ -44,7 +44,8 @@ export const useChatStore = defineStore("chat", {
       activeRoom: 'Geral',       
       messagesByRoom: {},
       newMessage: [],
-      visibleMessagesCount: {}
+      visibleMessagesCount: {},
+      fayeClient: null,
     }),
 
     getters: {
@@ -97,7 +98,7 @@ export const useChatStore = defineStore("chat", {
          // Se não tiver nada no localStorage ainda, carrega do arquivo JSON
          if (Object.keys(this.messagesByRoom).length === 0) {
             try {
-               const response = await axios.get('/messages.json');
+               const response = await axios.get(`${import.meta.env.BASE_URL}/messages.json`);
                this.messagesByRoom = response.data;
                localStorage.setItem("messagesByRoom", JSON.stringify(this.messagesByRoom));
             } catch (error) {
@@ -110,6 +111,18 @@ export const useChatStore = defineStore("chat", {
                this.visibleMessagesCount[room] = Math.min(10, this.messagesByRoom[room].length);
             }
          });
+      },
+      initFaye() {
+         if (!this.fayeClient){
+            this.fayeClient = new Faye.Client('http://localhost:8000/faye');
+
+            this.fayeClient.subscribe('/messages', message => {
+               console.log('Nova mensagem do Faye:', message);
+               this.addNewMessage(message); // aqui o `this` é a store
+            });
+         }
+         
+         console.log('Cliente Faye inicializado')
       },
      // ---------- AUTH ----------
       login(nickname, password) {

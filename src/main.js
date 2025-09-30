@@ -1,3 +1,5 @@
+if (typeof window !== 'undefined' && !window.global) window.global = window;
+
 import './assets/main.css'
 
 import { createApp } from 'vue'
@@ -7,7 +9,7 @@ import App from './App.vue'
 import router from './router'
 
 import { useChatStore } from './stores/chat'
-import Toast, {useToast} from "vue-toastification"
+import Toast from "vue-toastification"
 import "vue-toastification/dist/index.css"
 
 const app = createApp(App);

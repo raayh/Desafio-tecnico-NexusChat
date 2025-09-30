@@ -61,11 +61,13 @@ export default{
           };
         },
         formatWeekday(dateString) {
+         if (!dateString) return '';
          const date = new Date(dateString);
          const options = { weekday: 'long' };
          return new Intl.DateTimeFormat('pt-BR', options).format(date);
         },
         formatTime(dateString) {
+         if (!dateString) return '';
          const date = new Date(dateString);
          const options = { hour: '2-digit', minute: '2-digit', hour12: false };
          return new Intl.DateTimeFormat('pt-BR', options).format(date);
