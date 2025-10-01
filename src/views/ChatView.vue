@@ -145,7 +145,7 @@ export default{
         
          if(!this.newMessageText == ''){
             const newMessage = {
-               // id: (Math.max(...messages.map(m => m.id)) + 1),
+               id: (Math.max(...messages.map(m => m.id)) + 1),
                nickname: this.chatStore.loggedInUser.nickname.trim().toLowerCase(),
                text: this.newMessageText,
                date: new Date().toISOString(),
@@ -579,6 +579,7 @@ export default{
       padding: 10px 20px; /* Reduz o padding da barra superior */
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
     }
    .chat {
       width: 100%; /* O chat ocupa a tela toda */

@@ -98,7 +98,7 @@ export const useChatStore = defineStore("chat", {
          // Se não tiver nada no localStorage ainda, carrega do arquivo JSON
          if (Object.keys(this.messagesByRoom).length === 0) {
             try {
-               const response = await axios.get(`${import.meta.env.BASE_URL}/messages.json`);
+               const response = await axios.get('/messages.json');
                this.messagesByRoom = response.data;
                localStorage.setItem("messagesByRoom", JSON.stringify(this.messagesByRoom));
             } catch (error) {
@@ -121,7 +121,7 @@ export const useChatStore = defineStore("chat", {
                this.addNewMessage(message); // aqui o `this` é a store
             });
          }
-         
+
          console.log('Cliente Faye inicializado')
       },
      // ---------- AUTH ----------
