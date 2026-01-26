@@ -151,22 +151,15 @@ export default{
                date: new Date().toISOString(),
             };
 
-            if (this.chatStore.fayeClient) {
-               this.chatStore.fayeClient.publish('/messages', newMessage);
-             }
-
-            // this.chatStore.addNewMessage(newMessage);
+            // Adiciona mensagem localmente e envia para outras abas via BroadcastChannel
+            this.chatStore.addNewMessage(newMessage);
             this.newMessageText = '';
-
-
-            //  console.log('this.fayeClient:', this.fayeClient);
-            // console.log('this.chatStore.fayeClient:', this.chatStore.fayeClient);
-
 
             this.scrollToBottom();
 
          } else {
             alert("Digite alguma coisa para enviar")}
+         
          
       },
       scrollToBottom() {
@@ -267,7 +260,7 @@ export default{
    },
    },
    mounted() {
-      this.chatStore.initFaye();
+      this.chatStore.initBroadcastChannel();
 
       document.addEventListener("keydown", this.handleEsc);
 
