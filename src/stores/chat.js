@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios';
-import Faye from 'faye';
+
 
 export const useChatStore = defineStore("chat", {
    state: () => ({
@@ -45,7 +45,7 @@ export const useChatStore = defineStore("chat", {
       messagesByRoom: {},
       newMessage: [],
       visibleMessagesCount: {},
-      fayeClient: null,
+      broadcastChannel: null,
    }),
 
    getters: {
@@ -112,17 +112,34 @@ export const useChatStore = defineStore("chat", {
             }
          });
       },
-      initFaye() {
-         if (!this.fayeClient) {
-            this.fayeClient = new Faye.Client('http://localhost:8085/faye');
+      initBroadcastChannel() {
+         if (!this.broadcastChannel) {
+            // BroadcastChannel permite comunicação entre abas do mesmo navegador
+            this.broadcastChannel = new BroadcastChannel('nexuschat_messages');
 
-            this.fayeClient.subscribe('/messages', message => {
-               console.log('Nova mensagem do Faye:', message);
-               this.addNewMessage(message); // aqui o `this` é a store
-            });
+            // Escuta mensagens de outras abas
+            this.broadcastChannel.onmessage = (event) => {
+               console.log('Mensagem recebida de outra aba:', event.data);
+               const { room, message } = event.data;
+
+               // Adiciona mensagem no estado local
+               if (!this.messagesByRoom[room]) {
+                  this.messagesByRoom[room] = [];
+               }
+               this.messagesByRoom[room].push(message);
+
+               // Persiste no localStorage
+               localStorage.setItem("messagesByRoom", JSON.stringify(this.messagesByRoom));
+
+               // Atualiza contador de mensagens visíveis se for a sala ativa
+               if (room === this.activeRoom) {
+                  const currentVisible = this.visibleMessagesCount[room] || 0;
+                  this.visibleMessagesCount[room] = currentVisible + 1;
+               }
+            };
          }
 
-         console.log('Cliente Faye inicializado')
+         console.log('BroadcastChannel inicializado para comunicação entre abas');
       },
       // ---------- AUTH ----------
       login(nickname, password) {
@@ -235,7 +252,13 @@ export const useChatStore = defineStore("chat", {
          this.messagesByRoom[this.activeRoom].push(newMessage);
          localStorage.setItem("messagesByRoom", JSON.stringify(this.messagesByRoom));
 
-
+         // Envia mensagem para outras abas via BroadcastChannel
+         if (this.broadcastChannel) {
+            this.broadcastChannel.postMessage({
+               room: this.activeRoom,
+               message: newMessage
+            });
+         }
       }
    }
 })
