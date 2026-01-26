@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Serviço do Frontend Vue.js
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexuschat-frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - faye-server
+    environment:
+      - VITE_FAYE_URL=http://faye-server:8001/faye
+    networks:
+      - nexuschat-network
+    restart: unless-stopped
+
+  # Serviço do Faye WebSocket Server
+  faye-server:
+    image: node:20-alpine
+    container_name: nexuschat-faye
+    working_dir: /app
+    volumes:
+      - ./faye-server.js:/app/faye-server.js:ro
+      - ./package.json:/app/package.json:ro
+    command: sh -c "npm install faye && node faye-server.js"
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    networks:
+      - nexuschat-network
+    restart: unless-stopped
+
+# Rede para comunicação entre containers
+networks:
+  nexuschat-network:
+    driver: bridge
