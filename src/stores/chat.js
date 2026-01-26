@@ -114,7 +114,7 @@ export const useChatStore = defineStore("chat", {
       },
       initFaye() {
          if (!this.fayeClient) {
-            this.fayeClient = new Faye.Client('http://localhost:8001/faye');
+            this.fayeClient = new Faye.Client('http://localhost:8085/faye');
 
             this.fayeClient.subscribe('/messages', message => {
                console.log('Nova mensagem do Faye:', message);

@@ -8,11 +8,9 @@ services:
       dockerfile: Dockerfile
     container_name: nexuschat-frontend
     ports:
-      - "8080:8080"
+      - "8081:8080"
     depends_on:
       - faye-server
-    environment:
-      - VITE_FAYE_URL=http://faye-server:8001/faye
     networks:
       - nexuschat-network
     restart: unless-stopped
@@ -27,14 +25,13 @@ services:
       - ./package.json:/app/package.json:ro
     command: sh -c "npm install faye && node faye-server.js"
     ports:
-      - "8001:8001"
+      - "8085:8085"
     environment:
-      - PORT=8001
+      - PORT=8085
     networks:
       - nexuschat-network
     restart: unless-stopped
 
-# Rede para comunicação entre containers
 networks:
   nexuschat-network:
     driver: bridge
