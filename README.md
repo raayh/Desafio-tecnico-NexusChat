@@ -7,7 +7,7 @@
 [![Netlify](https://img.shields.io/badge/Netlify-Deployed-00C7B7?logo=netlify&logoColor=white)](https://www.netlify.com/)
 
 🔗 **Demo online**: https://nexuschat.netlify.app  
-📂 **Versão alternativa (Faye)**: ver branch/diretório específico no repositório
+📂 **Versão alternativa (Faye)**: https://github.com/raayh/NexusChat-Docker 
 
 ---
 
